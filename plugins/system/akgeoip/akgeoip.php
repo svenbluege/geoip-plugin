@@ -37,6 +37,8 @@ class plgSystemAkgeoip extends JPlugin
 		require_once 'lib/akgeoip.php';
 		require_once 'lib/vendor/autoload.php';
 
+		$this->loadLanguage('plg_system_akgeoip');
+
 		return parent::__construct($subject, $config);
 	}
 }

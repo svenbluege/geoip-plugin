@@ -171,4 +171,111 @@ class AkeebaGeoipProvider
 			}
 		}
 	}
+
+	/**
+	 * Downloads and installs a fresh copy of the GeoLite2 Country database
+	 *
+	 * @return  mixed  True on success, error string on failure
+	 */
+	public function updateDatabase()
+	{
+		$datFile = JPATH_PLUGINS . '/system/akgeoip/db/GeoLite2-Country.mmdb';
+
+		// Sanity check
+		if(!function_exists('gzinflate')) {
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_NOGZSUPPORT');
+		}
+
+		// Download the latest MaxMind GeoCountry Lite database
+		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
+		$http = JHttpFactory::getHttp();
+		$response = $http->get($url);
+
+		try
+		{
+			$compressed = $response->body;
+		}
+		catch (Exception $e)
+		{
+			return $e->getMessage();
+		}
+
+		if (empty($compressed))
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD');
+		}
+
+		// Write the downloaded file to a temporary location
+		$jreg = JFactory::getConfig();
+		$tmpdir = $jreg->get('tmp_path');
+
+		JLoader::import('joomla.filesystem.folder');
+
+		// Make sure the user doesn't use the system-wide tmp directory. You know, the one that's
+		// being erased periodically and will cause a real mess while installing extensions (Grrr!)
+		if(realpath($tmpdir) == '/tmp')
+		{
+			// Someone inform the user that what he's doing is insecure and stupid, please. In the
+			// meantime, I will fix what is broken.
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+		// Make sure that folder exists (users do stupid things too often; you'd be surprised)
+		elseif(!JFolder::exists($tmpdir))
+		{
+			// Darn it, user! WTF where you thinking? OK, let's use a directory I know it's there...
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+
+		$target = $tmpdir.'/GeoLite2-Country.mmdb.gz';
+
+		$ret = JFile::write($target, $compressed);
+
+		if ($ret === false)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_WRITEFAILED');
+		}
+
+		unset($compressed);
+
+		// Decompress the file
+		$uncompressed = '';
+		$zp = @gzopen($target, 'rb');
+		if($zp !== false)
+		{
+			while(!gzeof($zp))
+			{
+				$uncompressed .= @gzread($zp, 102400);
+			}
+
+			@gzclose($zp);
+
+			if (!@unlink($target))
+			{
+				JFile::delete($target);
+			}
+		}
+		else
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTUNCOMPRESS');
+		}
+
+		// Remove old file
+		JLoader::import('joomla.filesystem.file');
+
+		if (JFile::exists($datFile))
+		{
+			if(!JFile::delete($datFile))
+			{
+				return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTDELETEOLD');
+			}
+		}
+
+		// Write the update file
+		if (!JFile::write($datFile, $uncompressed))
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTWRITE');
+		}
+
+		return true;
+	}
 }
