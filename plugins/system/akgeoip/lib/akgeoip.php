@@ -82,10 +82,10 @@ class AkeebaGeoipProvider
 	}
 
 	/**
-	 * Gets the ISO country code from an IP address
+	 * Gets the country name from an IP address
 	 *
 	 * @param   string  $ip      The IP address to look up
-	 * @param   string  $locale  The locale of the country name, e.g 'de-DE' to return the country names in German. If not specified the English (US) names are returned.
+	 * @param   string  $locale  The locale of the country name, e.g 'de' to return the country names in German. If not specified the English (US) names are returned.
 	 *
 	 * @return  mixed  A string with the country name if found, false if the IP address is not found, null if the db can't be loaded
 	 */
@@ -110,6 +110,39 @@ class AkeebaGeoipProvider
 			else
 			{
 				return $record->country->names[$locale];
+			}
+		}
+	}
+
+	/**
+	 * Gets the continent name from an IP address
+	 *
+	 * @param   string  $ip      The IP address to look up
+	 * @param   string  $locale  The locale of the continent name, e.g 'de' to return the country names in German. If not specified the English (US) names are returned.
+	 *
+	 * @return  mixed  A string with the country name if found, false if the IP address is not found, null if the db can't be loaded
+	 */
+	public function getContinent($ip, $locale = null)
+	{
+		$record = $this->getCountryRecord($ip);
+
+		if ($record === false)
+		{
+			return false;
+		}
+		elseif (is_null($record))
+		{
+			return false;
+		}
+		else
+		{
+			if (empty($locale))
+			{
+				return $record->continent;
+			}
+			else
+			{
+				return $record->continent->names[$locale];
 			}
 		}
 	}
