@@ -1,0 +1,7 @@
+/.idea
+/build/bin
+/build/buildlang
+/build/phingext
+/build/tools
+/release
+
