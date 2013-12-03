@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<project name="AkGeoIPProvider" description="Akeeba GeoIP Provider for Joomla!" default="all" >
+	<property file="./build.properties" />
+	<!-- Default properties, set only if not already assigned in the build.properties file -->
+	<property name="dirs.root" value=".." />
+	<property name="dirs.plugins" value="../plugins" />
+	<property name="dirs.release" value="../release" />
+	<property name="version" value="git" />
+
+	<property name="dirs.bin" value="bin" />
+	<property name="dirs.bin.libxml" value="${dirs.bin}/libxml" />
+	<property name="dirs.bin.fop" value="${dirs.bin}/fop" />
+	<property name="dirs.bin.dbxsl" value="${dirs.bin}/dbxsl" />
+	<property name="dirs.bin.release" value="../release" />
+	<property name="dirs.documentation" value="../documentation" />
+
+	<taskdef name="zipme" classname="phingext.ZipmeTask" />
+	<taskdef name="lang" classname="phingext.LangTask" />
+	<taskdef name="gitversion" classname="phingext.GitVersionTask" />
+	<!--
+	====================================================================================================
+	File sets
+	====================================================================================================
+	-->
+	
+	<fileset dir="${dirs.plugins}" id="geoip-plugin">
+		<include name="plugins/system/akgeoip/**" />
+
+        <exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/bin/**" />
+		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/**" />
+		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/.gitignore" />
+		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/.gitmodules" />
+		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/.travis.yml" />
+		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/phpunit.xml.dist" />
+
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/phing/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/tests/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/.gitignore" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/.travis.yml" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/build.xml" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/phar-stub.php" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/phpunit.xml.dist" />
+
+
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/examples/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/ext/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.coveralls*" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.gitignore" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.gitmodules" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.travis.yml" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/phpunit.xml.dist" />
+
+        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Debug/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Tests/**" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/.gitignore" />
+        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/phpunit.xml.dist" />
+	</fileset>
+	
+	<!--
+	====================================================================================================
+	Tasks - General
+	====================================================================================================
+	-->
+	
+	<target name="all" description="Makes everything"
+		depends="git">
+	</target>
+
+	<target name="git" description="Makes only packages"
+		depends="new-release,setup-properties,plugin-package">
+	</target>
+
+	<target name="new-release" description="Create afresh the release directory">
+		<!-- Recreate the release directory -->
+		<delete dir="${dirs.release}" quiet="true" includeemptydirs="true" />
+		<mkdir dir="${dirs.release}" />
+	</target>
+	
+	<target name="setup-properties" description="Set up version and build properties">
+		<!-- Initialize the build.date timestamp -->
+		<tstamp>
+			<format property="build.date" pattern="%Y-%m-%d" />
+		</tstamp>
+
+		<!-- Initialize the version if it's not set -->
+		<if>
+			<equals arg1="${version}" arg2="git" />
+			<then>
+				<gitversion workingcopy="${dirs.root}" propertyname="git.lastrevision" />
+				<property name="version" value="rev${git.lastrevision}" override="true" />
+			</then>
+		</if>
+	</target>
+
+	<!--
+	====================================================================================================
+	Tasks - Joomla! packages
+	====================================================================================================
+	-->
+	
+	<target name="plugin-package" description="Plugin package build"
+		depends="new-release,setup-properties">
+		
+		<!-- Copy plugin template file -->
+		<copy file="./templates/plg_system_akgeoip.xml" tofile="${dirs.plugins}/system/akgeoip/akgeoip.xml" overwrite="true">
+			<filterchain id="standard-tokens-plgsrp">
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="DATE" value="${build.date}" />
+					<token key="VERSION" value="${version}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+			
+		<zipme basedir="${dirs.plugins}" destfile="${dirs.release}/plg_system_akgeoip-${version}.zip" includeemptydirs="true">
+			<fileset refid="geoip-plugin" />
+		</zipme>
+	</target>
+
+	<!--
+	====================================================================================================
+	Tasks - Project management
+	====================================================================================================
+	-->
+
+	<target name="link" description="Internal linker">
+		<exec command="php ../buildfiles/tools/link.php ${application.startdir}/.." dir="${application.startdir}/.." passthru="true" />
+		<exec command="php ../buildfiles/tools/langlink.php ${application.startdir}/.." dir="${application.startdir}/.." passthru="true" />
+	</target>
+	
+	<target name="relink" description="Project relinker">
+		<exec command="php ../buildfiles/tools/relink.php ${site} ${application.startdir}/.." dir="${application.startdir}/.." passthru="true" />
+	</target>
+	
+	<target name="release" depends="setup-properties" description="Upload the release to AkeebaBackup.com">
+		<copy file="./templates/release.json" tofile="${dirs.root}/release.json" overwrite="true">
+			<filterchain id="standard-tokens">
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="DATE" value="${build.date}" />
+					<token key="VERSION" value="${version}" />
+					<token key="RELEASEDIR" value="${phing.dir}/${dirs.release}" />
+					<token key="REPODIR" value="${phing.dir}/${dirs.root}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+
+		<exec command="php ${project.basedir}/../../releasemaker/releasemaker/index.php ${project.basedir}/../release.json" dir="${project.basedir}" passthru="true" />
+
+		<delete file="${dirs.root}/release.json" quiet="yes" />
+	</target>
+
+	<target name="ftpdeploy" depends="git">
+		<gitversion workingcopy="${dirs.root}" propertyname="git.lastrevision" />
+		<echo>Uploading release</echo>
+		<ftpdeploy
+			host="${ftp.host}"
+			port="${ftp.port}"
+			username="${ftp.username}"
+			password="${ftp.password}"
+			dir="${ftp.dir}/akgeoip/rev${git.lastrevision}"
+			mode="${ftp.mode}"
+			passive="true"
+			level="debug">
+			<fileset dir="${dirs.root}">
+				<include name="CHANGELOG"/>
+			</fileset>			
+			<fileset dir="${dirs.release}">
+				<include name="plg_*.zip"/>
+			</fileset>
+		</ftpdeploy>
+	</target>
+</project>

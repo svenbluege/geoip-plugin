@@ -1,7 +1,12 @@
 /.idea
+
 /build/bin
 /build/buildlang
 /build/phingext
 /build/tools
+/build/build.properties
+
+/plugins/system/akgeoip/akgeoip.xml
+
 /release
 
