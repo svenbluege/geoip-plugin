@@ -115,6 +115,31 @@ class AkeebaGeoipProvider
 	}
 
 	/**
+	 * Gets the continent ISO code from an IP address
+	 *
+	 * @param   string  $ip      The IP address to look up
+	 *
+	 * @return  mixed  A string with the country name if found, false if the IP address is not found, null if the db can't be loaded
+	 */
+	public function getContinent($ip, $locale = null)
+	{
+		$record = $this->getCountryRecord($ip);
+
+		if ($record === false)
+		{
+			return false;
+		}
+		elseif (is_null($record))
+		{
+			return false;
+		}
+		else
+		{
+			return $record->continent->code;
+		}
+	}
+
+	/**
 	 * Gets the continent name from an IP address
 	 *
 	 * @param   string  $ip      The IP address to look up
@@ -122,7 +147,7 @@ class AkeebaGeoipProvider
 	 *
 	 * @return  mixed  A string with the country name if found, false if the IP address is not found, null if the db can't be loaded
 	 */
-	public function getContinent($ip, $locale = null)
+	public function getContinentName($ip, $locale = null)
 	{
 		$record = $this->getCountryRecord($ip);
 
