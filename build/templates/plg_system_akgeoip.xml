@@ -9,13 +9,19 @@
 	<creationDate>##DATE##</creationDate>
 	<version>##VERSION##</version>
 	<description>PLG_SYSTEM_AKGEOIP_XML_DESCRIPTION</description>
-	<files>
+
+    <files>
 		<filename plugin="akgeoip">akgeoip.php</filename>
         <folder>db</folder>
         <folder>lib</folder>
 	</files>
-	<languages folder="language">
+
+    <languages folder="language">
 		<language tag="en-GB">en-GB/en-GB.plg_system_akgeoip.ini</language>
 		<language tag="en-GB">en-GB/en-GB.plg_system_akgeoip.sys.ini</language>
 	</languages>
+
+    <updateservers>
+        <server type="extension" priority="1" name="Akeeba GeoIP Provider Plugin"><![CDATA[https://cdn.akeebabackup.com/updates/akgeoip.xml]]></server>
+    </updateservers>
 </extension>

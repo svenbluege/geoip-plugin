@@ -4,6 +4,7 @@
 /build/buildlang
 /build/phingext
 /build/tools
+/build/templates/release.json
 /build/build.properties
 
 /plugins/system/akgeoip/akgeoip.xml
