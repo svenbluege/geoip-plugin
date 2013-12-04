@@ -23,38 +23,38 @@
 	====================================================================================================
 	-->
 	
-	<fileset dir="${dirs.plugins}" id="geoip-plugin">
-		<include name="plugins/system/akgeoip/**" />
+	<fileset dir="${dirs.plugins}/system/akgeoip" id="geoip-plugin">
+		<include name="**" />
 
-        <exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/bin/**" />
-		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/**" />
-		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/.gitignore" />
-		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/.gitmodules" />
-		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/.travis.yml" />
-		<exclude name="plugins/system/akgeoip/lib/vendor/geoip2/geoip2/tests/phpunit.xml.dist" />
+        <exclude name="lib/vendor/geoip2/geoip2/bin/**" />
+		<exclude name="lib/vendor/geoip2/geoip2/tests/**" />
+		<exclude name="lib/vendor/geoip2/geoip2/tests/.gitignore" />
+		<exclude name="lib/vendor/geoip2/geoip2/tests/.gitmodules" />
+		<exclude name="lib/vendor/geoip2/geoip2/tests/.travis.yml" />
+		<exclude name="lib/vendor/geoip2/geoip2/tests/phpunit.xml.dist" />
 
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/phing/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/tests/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/.gitignore" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/.travis.yml" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/build.xml" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/phar-stub.php" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/guzzle/guzzle/phpunit.xml.dist" />
+        <exclude name="lib/vendor/guzzle/guzzle/phing/**" />
+        <exclude name="lib/vendor/guzzle/guzzle/tests/**" />
+        <exclude name="lib/vendor/guzzle/guzzle/.gitignore" />
+        <exclude name="lib/vendor/guzzle/guzzle/.travis.yml" />
+        <exclude name="lib/vendor/guzzle/guzzle/build.xml" />
+        <exclude name="lib/vendor/guzzle/guzzle/phar-stub.php" />
+        <exclude name="lib/vendor/guzzle/guzzle/phpunit.xml.dist" />
 
 
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/examples/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/ext/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.coveralls*" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.gitignore" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.gitmodules" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/.travis.yml" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/maxmind-db/reader/tests/phpunit.xml.dist" />
+        <exclude name="lib/vendor/maxmind-db/reader/examples/**" />
+        <exclude name="lib/vendor/maxmind-db/reader/ext/**" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/**" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/.coveralls*" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/.gitignore" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/.gitmodules" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/.travis.yml" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/phpunit.xml.dist" />
 
-        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Debug/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Tests/**" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/.gitignore" />
-        <exclude name="plugins/system/akgeoip/lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/phpunit.xml.dist" />
+        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Debug/**" />
+        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Tests/**" />
+        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/.gitignore" />
+        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/phpunit.xml.dist" />
 	</fileset>
 	
 	<!--
@@ -112,8 +112,8 @@
 			</filterchain>
 		</copy>
 			
-		<zipme basedir="${dirs.plugins}" destfile="${dirs.release}/plg_system_akgeoip-${version}.zip" includeemptydirs="true">
-			<fileset refid="geoip-plugin" />
+		<zipme basedir="${dirs.plugins}/system/akgeoip" destfile="${dirs.release}/plg_system_akgeoip-${version}.zip" includeemptydirs="true">
+            <fileset refid="geoip-plugin" />
 		</zipme>
 	</target>
 
