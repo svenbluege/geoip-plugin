@@ -22,6 +22,6 @@
 	</languages>
 
     <updateservers>
-        <server type="extension" priority="1" name="Akeeba GeoIP Provider Plugin"><![CDATA[https://cdn.akeebabackup.com/updates/akgeoip.xml]]></server>
+        <server type="extension" priority="1" name="Akeeba GeoIP Provider Plugin"><![CDATA[http://cdn.akeebabackup.com/updates/akgeoip.xml]]></server>
     </updateservers>
 </extension>
