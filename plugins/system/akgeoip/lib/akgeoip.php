@@ -23,6 +23,11 @@ class AkeebaGeoipProvider
 	 */
 	public function __construct()
 	{
+		if (!function_exists('bcadd') || !function_exists('bcmul') || !function_exists('bcpow'))
+		{
+			require_once __DIR__ . '/fakebcmath.php';
+		}
+
 		$filePath = __DIR__ . '/../db/GeoLite2-Country.mmdb';
 
 		$this->reader = new Reader($filePath);
