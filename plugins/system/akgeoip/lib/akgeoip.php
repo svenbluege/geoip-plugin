@@ -1,7 +1,7 @@
 <?php
 /**
  * @package		akgeoip
- * @copyright	Copyright (c)2013 Nicholas K. Dionysopoulos
+ * @copyright	Copyright (c)2014 Nicholas K. Dionysopoulos
  * @license		GNU General Public License version 3, or later
  *
  */
@@ -56,6 +56,12 @@ class AkeebaGeoipProvider
 			{
 				$this->lookups[$ip] = null;
 			}
+            // GeoIp2 could throw several different types of exceptions. Let's be sure that we're going to catch them all
+            catch (Exception $e)
+            {
+                $this->lookups[$ip] = null;
+            }
+
 		}
 
 		return $this->lookups[$ip];
