@@ -214,9 +214,16 @@ class AkeebaGeoipProvider
 			return $e->getMessage();
 		}
 
+		// An empty file indicates a problem with MaxMind's servers
 		if (empty($compressed))
 		{
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD');
+		}
+
+		// Sometimes you get a rate limit exceeded
+		if (stristr($compressed, 'Rate limited exceeded') !== false)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
 		}
 
 		// Write the downloaded file to a temporary location
@@ -253,7 +260,9 @@ class AkeebaGeoipProvider
 
 		// Decompress the file
 		$uncompressed = '';
+
 		$zp = @gzopen($target, 'rb');
+
 		if($zp !== false)
 		{
 			while(!gzeof($zp))
@@ -271,6 +280,18 @@ class AkeebaGeoipProvider
 		else
 		{
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTUNCOMPRESS');
+		}
+
+		// Check the size of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
+		if (strlen($uncompressed) < 1048576)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
+		}
+
+		// Check the contents of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
+		if (stristr($uncompressed, 'Rate limited exceeded') !== false)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
 		}
 
 		// Remove old file
