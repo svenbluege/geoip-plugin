@@ -200,36 +200,14 @@ class AkeebaGeoipProvider
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_NOGZSUPPORT');
 		}
 
-		// Download the latest MaxMind GeoCountry Lite database
-		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
-		$http = JHttpFactory::getHttp();
-		$response = $http->get($url);
-
+		// Try to download the package, if I get any exception I'll simply stop here and display the error
 		try
 		{
-			$compressed = $response->body;
+			$this->downloadDatabase();
 		}
-		catch (Exception $e)
+		catch(Exception $e)
 		{
 			return $e->getMessage();
-		}
-
-		// An empty file indicates a problem with MaxMind's servers
-		if (empty($compressed))
-		{
-			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD');
-		}
-
-		// Sometimes you get a rate limit exceeded
-		if (stristr($compressed, 'Rate limited exceeded') !== false)
-		{
-			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
-		}
-
-		// Generic check on valid HTTP code
-		if($response->code != 200)
-		{
-			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC');
 		}
 
 		// Write the downloaded file to a temporary location
@@ -401,6 +379,56 @@ class AkeebaGeoipProvider
 				$newSite = (object)$update_site;
 				$db->updateObject('#__update_sites', $newSite, 'update_site_id', true);
 			}
+		}
+	}
+
+	private function downloadDatabase()
+	{
+		// Download the latest MaxMind GeoCountry Lite database
+		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
+
+		// I should have F0F installed, but let's double check in order to avoid errors
+		if(file_exists(JPATH_LIBRARIES.'/f0f/include.php'))
+		{
+			require_once JPATH_LIBRARIES.'/f0f/include.php';
+		}
+
+		// Do I have the latest version of F0F? If not I'll use Joomla library and hope for the best
+		// This check will be removed in the future
+		if(class_exists('F0FDownload'))
+		{
+			// We must use curl since we have to store and send cookies
+			$http = new F0FDownload();
+			$http->setAdapter('curl');
+
+			$response = $http->getFromURL($url);
+		}
+		else
+		{
+			$http = JHttpFactory::getHttp();
+
+			// Let's bubble up the exception, we will take care in the caller
+			$response   = $http->get($url);
+			$compressed = $response->body;
+			$code       = $response->code;
+		}
+
+		// An empty file indicates a problem with MaxMind's servers
+		if (empty($compressed))
+		{
+			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD'));
+		}
+
+		// Sometimes you get a rate limit exceeded
+		if (stristr($compressed, 'Rate limited exceeded') !== false)
+		{
+			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT'));
+		}
+
+		// Generic check on valid HTTP code
+		if($code != 200)
+		{
+			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
 		}
 	}
 }
