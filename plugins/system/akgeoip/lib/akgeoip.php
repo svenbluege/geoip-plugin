@@ -226,6 +226,12 @@ class AkeebaGeoipProvider
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
 		}
 
+		// Generic check on valid HTTP code
+		if($response->code != 200)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC');
+		}
+
 		// Write the downloaded file to a temporary location
 		$jreg = JFactory::getConfig();
 		$tmpdir = $jreg->get('tmp_path');
