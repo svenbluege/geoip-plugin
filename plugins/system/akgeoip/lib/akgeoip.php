@@ -203,7 +203,7 @@ class AkeebaGeoipProvider
 		// Try to download the package, if I get any exception I'll simply stop here and display the error
 		try
 		{
-			$this->downloadDatabase();
+			$compressed = $this->downloadDatabase();
 		}
 		catch(Exception $e)
 		{
@@ -211,25 +211,7 @@ class AkeebaGeoipProvider
 		}
 
 		// Write the downloaded file to a temporary location
-		$jreg = JFactory::getConfig();
-		$tmpdir = $jreg->get('tmp_path');
-
-		JLoader::import('joomla.filesystem.folder');
-
-		// Make sure the user doesn't use the system-wide tmp directory. You know, the one that's
-		// being erased periodically and will cause a real mess while installing extensions (Grrr!)
-		if(realpath($tmpdir) == '/tmp')
-		{
-			// Someone inform the user that what he's doing is insecure and stupid, please. In the
-			// meantime, I will fix what is broken.
-			$tmpdir = JPATH_SITE . '/tmp';
-		}
-		// Make sure that folder exists (users do stupid things too often; you'd be surprised)
-		elseif(!JFolder::exists($tmpdir))
-		{
-			// Darn it, user! WTF where you thinking? OK, let's use a directory I know it's there...
-			$tmpdir = JPATH_SITE . '/tmp';
-		}
+		$tmpdir = $this->getTempFolder();
 
 		$target = $tmpdir.'/GeoLite2-Country.mmdb.gz';
 
@@ -397,11 +379,28 @@ class AkeebaGeoipProvider
 		// This check will be removed in the future
 		if(class_exists('F0FDownload'))
 		{
-			// We must use curl since we have to store and send cookies
 			$http = new F0FDownload();
-			$http->setAdapter('curl');
 
-			$response = $http->getFromURL($url);
+			// If I am using curl, let's store and send cookies, it should be more fail-proof against CloudFlare security
+			if($http->getAdapterName() == 'curl')
+			{
+				$cookiefile = tempnam($this->getTempFolder(), 'geoip');
+				$cookiejar  = tempnam($this->getTempFolder(), 'geoip');
+
+				$http->setAdapterOptions(array(
+					CURLOPT_COOKIEFILE => $cookiefile,
+					CURLOPT_COOKIEJAR  => $cookiejar
+				));
+			}
+
+			$compressed = $http->getFromURL($url);
+
+			// Remove cookie files, we don't need them
+			if($http->getAdapterName() == 'curl')
+			{
+				unlink($cookiefile);
+				unlink($cookiejar);
+			}
 		}
 		else
 		{
@@ -410,7 +409,12 @@ class AkeebaGeoipProvider
 			// Let's bubble up the exception, we will take care in the caller
 			$response   = $http->get($url);
 			$compressed = $response->body;
-			$code       = $response->code;
+
+			// Generic check on valid HTTP code
+			if($response->code > 299)
+			{
+				throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
+			}
 		}
 
 		// An empty file indicates a problem with MaxMind's servers
@@ -425,10 +429,36 @@ class AkeebaGeoipProvider
 			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT'));
 		}
 
-		// Generic check on valid HTTP code
-		if($code != 200)
+		return $compressed;
+	}
+
+	/**
+	 * Reads (and checks) the temp Joomla folder
+	 *
+	 * @return string
+	 */
+	private function getTempFolder()
+	{
+		$jreg = JFactory::getConfig();
+		$tmpdir = $jreg->get('tmp_path');
+
+		JLoader::import('joomla.filesystem.folder');
+
+		// Make sure the user doesn't use the system-wide tmp directory. You know, the one that's
+		// being erased periodically and will cause a real mess while installing extensions (Grrr!)
+		if(realpath($tmpdir) == '/tmp')
 		{
-			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
+			// Someone inform the user that what he's doing is insecure and stupid, please. In the
+			// meantime, I will fix what is broken.
+			$tmpdir = JPATH_SITE . '/tmp';
 		}
+		// Make sure that folder exists (users do stupid things too often; you'd be surprised)
+		elseif(!JFolder::exists($tmpdir))
+		{
+			// Darn it, user! WTF where you thinking? OK, let's use a directory I know it's there...
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+
+		return $tmpdir;
 	}
 }
