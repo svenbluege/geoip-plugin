@@ -30,7 +30,15 @@ class AkeebaGeoipProvider
 
 		$filePath = __DIR__ . '/../db/GeoLite2-Country.mmdb';
 
-		$this->reader = new Reader($filePath);
+		try
+		{
+			$this->reader = new Reader($filePath);
+		}
+		// If anything goes wrong, MaxMind will raise an exception, resulting in a WSOD. Let's be sure to catch everything
+		catch(\Exception $e)
+		{
+			$this->reader = null;
+		}
 	}
 
 	/**
@@ -46,7 +54,14 @@ class AkeebaGeoipProvider
 		{
 			try
 			{
-				$this->lookups[$ip] = $this->reader->country($ip);
+				if(!is_null($this->reader))
+				{
+					$this->lookups[$ip] = $this->reader->country($ip);
+				}
+				else
+				{
+					$this->lookups[$ip] = null;
+				}
 			}
 			catch (\GeoIp2\Exception\AddressNotFoundException $e)
 			{
