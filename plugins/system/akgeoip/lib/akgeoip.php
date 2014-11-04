@@ -239,6 +239,17 @@ class AkeebaGeoipProvider
 
 		unset($compressed);
 
+		// Double check if MaxMind can actually read and validate the downloaded database
+		try
+		{
+			$reader = new Reader($target);
+		}
+		catch(\Exception $e)
+		{
+			// MaxMind could not validate the database, let's inform the user
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_INVALIDDB');
+		}
+
 		// Decompress the file
 		$uncompressed = '';
 
