@@ -239,17 +239,6 @@ class AkeebaGeoipProvider
 
 		unset($compressed);
 
-		// Double check if MaxMind can actually read and validate the downloaded database
-		try
-		{
-			$reader = new Reader($target);
-		}
-		catch(\Exception $e)
-		{
-			// MaxMind could not validate the database, let's inform the user
-			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_INVALIDDB');
-		}
-
 		// Decompress the file
 		$uncompressed = '';
 
@@ -273,6 +262,24 @@ class AkeebaGeoipProvider
 		{
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTUNCOMPRESS');
 		}
+
+
+		// Double check if MaxMind can actually read and validate the downloaded database
+		try
+		{
+			// The Reader want a file, so let me write again the file in the temp directory
+			JFile::write($target, $uncompressed);
+			$reader = new Reader($target);
+		}
+		catch(\Exception $e)
+		{
+			JFile::delete($target);
+			// MaxMind could not validate the database, let's inform the user
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_INVALIDDB');
+		}
+
+		JFile::delete($target);
+
 
 		// Check the size of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
 		if (strlen($uncompressed) < 1048576)
