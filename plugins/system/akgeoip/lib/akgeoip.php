@@ -30,7 +30,15 @@ class AkeebaGeoipProvider
 
 		$filePath = __DIR__ . '/../db/GeoLite2-Country.mmdb';
 
-		$this->reader = new Reader($filePath);
+		try
+		{
+			$this->reader = new Reader($filePath);
+		}
+		// If anything goes wrong, MaxMind will raise an exception, resulting in a WSOD. Let's be sure to catch everything
+		catch(\Exception $e)
+		{
+			$this->reader = null;
+		}
 	}
 
 	/**
@@ -46,7 +54,14 @@ class AkeebaGeoipProvider
 		{
 			try
 			{
-				$this->lookups[$ip] = $this->reader->country($ip);
+				if(!is_null($this->reader))
+				{
+					$this->lookups[$ip] = $this->reader->country($ip);
+				}
+				else
+				{
+					$this->lookups[$ip] = null;
+				}
 			}
 			catch (\GeoIp2\Exception\AddressNotFoundException $e)
 			{
@@ -247,6 +262,24 @@ class AkeebaGeoipProvider
 		{
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTUNCOMPRESS');
 		}
+
+
+		// Double check if MaxMind can actually read and validate the downloaded database
+		try
+		{
+			// The Reader want a file, so let me write again the file in the temp directory
+			JFile::write($target, $uncompressed);
+			$reader = new Reader($target);
+		}
+		catch(\Exception $e)
+		{
+			JFile::delete($target);
+			// MaxMind could not validate the database, let's inform the user
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_INVALIDDB');
+		}
+
+		JFile::delete($target);
+
 
 		// Check the size of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
 		if (strlen($uncompressed) < 1048576)
