@@ -72,7 +72,7 @@ class AkeebaGeoipProvider
 				$this->lookups[$ip] = null;
 			}
             // GeoIp2 could throw several different types of exceptions. Let's be sure that we're going to catch them all
-            catch (Exception $e)
+            catch (\Exception $e)
             {
                 $this->lookups[$ip] = null;
             }
@@ -220,7 +220,7 @@ class AkeebaGeoipProvider
 		{
 			$compressed = $this->downloadDatabase();
 		}
-		catch(Exception $e)
+		catch(\Exception $e)
 		{
 			return $e->getMessage();
 		}
@@ -446,20 +446,20 @@ class AkeebaGeoipProvider
 			// Generic check on valid HTTP code
 			if($response->code > 299)
 			{
-				throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
+				throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
 			}
 		}
 
 		// An empty file indicates a problem with MaxMind's servers
 		if (empty($compressed))
 		{
-			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD'));
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD'));
 		}
 
 		// Sometimes you get a rate limit exceeded
 		if (stristr($compressed, 'Rate limited exceeded') !== false)
 		{
-			throw new Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT'));
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT'));
 		}
 
 		return $compressed;
