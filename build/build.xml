@@ -26,6 +26,8 @@
 	<fileset dir="${dirs.plugins}/system/akgeoip" id="geoip-plugin">
 		<include name="**" />
 
+        <exclude name="lib/composer.*" />
+
         <exclude name="lib/vendor/geoip2/geoip2/bin/**" />
 		<exclude name="lib/vendor/geoip2/geoip2/tests/**" />
 		<exclude name="lib/vendor/geoip2/geoip2/tests/.gitignore" />
