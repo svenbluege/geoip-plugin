@@ -20,6 +20,7 @@
 		<exclude name="lib/vendor/geoip2/geoip2/tests/.travis.yml" />
 		<exclude name="lib/vendor/geoip2/geoip2/tests/phpunit.xml.dist" />
 
+        <exclude name="lib/vendor/guzzle/guzzle/docs/**" />
         <exclude name="lib/vendor/guzzle/guzzle/phing/**" />
         <exclude name="lib/vendor/guzzle/guzzle/tests/**" />
         <exclude name="lib/vendor/guzzle/guzzle/.gitignore" />
