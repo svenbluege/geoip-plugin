@@ -4,8 +4,6 @@
 /build/buildlang
 /build/phingext
 /build/tools
-/build/templates/release.json
-/build/build.properties
 
 /plugins/system/akgeoip/akgeoip.xml
 /plugins/system/akgeoip/db/GeoLite2-Country.mmdb

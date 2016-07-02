@@ -1,7 +1,7 @@
 <?php
 /**
  * @package		akgeoip
- * @copyright	Copyright (c)2014 Nicholas K. Dionysopoulos
+ * @copyright	Copyright (c)2013-2016 Nicholas K. Dionysopoulos
  * @license		GNU General Public License version 3, or later
  *
  */
@@ -30,7 +30,15 @@ class AkeebaGeoipProvider
 
 		$filePath = __DIR__ . '/../db/GeoLite2-Country.mmdb';
 
-		$this->reader = new Reader($filePath);
+		try
+		{
+			$this->reader = new Reader($filePath);
+		}
+		// If anything goes wrong, MaxMind will raise an exception, resulting in a WSOD. Let's be sure to catch everything
+		catch(\Exception $e)
+		{
+			$this->reader = null;
+		}
 	}
 
 	/**
@@ -46,7 +54,14 @@ class AkeebaGeoipProvider
 		{
 			try
 			{
-				$this->lookups[$ip] = $this->reader->country($ip);
+				if(!is_null($this->reader))
+				{
+					$this->lookups[$ip] = $this->reader->country($ip);
+				}
+				else
+				{
+					$this->lookups[$ip] = null;
+				}
 			}
 			catch (\GeoIp2\Exception\AddressNotFoundException $e)
 			{
@@ -57,7 +72,7 @@ class AkeebaGeoipProvider
 				$this->lookups[$ip] = null;
 			}
             // GeoIp2 could throw several different types of exceptions. Let's be sure that we're going to catch them all
-            catch (Exception $e)
+            catch (\Exception $e)
             {
                 $this->lookups[$ip] = null;
             }
@@ -200,52 +215,18 @@ class AkeebaGeoipProvider
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_NOGZSUPPORT');
 		}
 
-		// Download the latest MaxMind GeoCountry Lite database
-		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
-		$http = JHttpFactory::getHttp();
-		$response = $http->get($url);
-
+		// Try to download the package, if I get any exception I'll simply stop here and display the error
 		try
 		{
-			$compressed = $response->body;
+			$compressed = $this->downloadDatabase();
 		}
-		catch (Exception $e)
+		catch(\Exception $e)
 		{
 			return $e->getMessage();
 		}
 
-		// An empty file indicates a problem with MaxMind's servers
-		if (empty($compressed))
-		{
-			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD');
-		}
-
-		// Sometimes you get a rate limit exceeded
-		if (stristr($compressed, 'Rate limited exceeded') !== false)
-		{
-			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
-		}
-
 		// Write the downloaded file to a temporary location
-		$jreg = JFactory::getConfig();
-		$tmpdir = $jreg->get('tmp_path');
-
-		JLoader::import('joomla.filesystem.folder');
-
-		// Make sure the user doesn't use the system-wide tmp directory. You know, the one that's
-		// being erased periodically and will cause a real mess while installing extensions (Grrr!)
-		if(realpath($tmpdir) == '/tmp')
-		{
-			// Someone inform the user that what he's doing is insecure and stupid, please. In the
-			// meantime, I will fix what is broken.
-			$tmpdir = JPATH_SITE . '/tmp';
-		}
-		// Make sure that folder exists (users do stupid things too often; you'd be surprised)
-		elseif(!JFolder::exists($tmpdir))
-		{
-			// Darn it, user! WTF where you thinking? OK, let's use a directory I know it's there...
-			$tmpdir = JPATH_SITE . '/tmp';
-		}
+		$tmpdir = $this->getTempFolder();
 
 		$target = $tmpdir.'/GeoLite2-Country.mmdb.gz';
 
@@ -281,6 +262,24 @@ class AkeebaGeoipProvider
 		{
 			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTUNCOMPRESS');
 		}
+
+
+		// Double check if MaxMind can actually read and validate the downloaded database
+		try
+		{
+			// The Reader want a file, so let me write again the file in the temp directory
+			JFile::write($target, $uncompressed);
+			$reader = new Reader($target);
+		}
+		catch(\Exception $e)
+		{
+			JFile::delete($target);
+			// MaxMind could not validate the database, let's inform the user
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_INVALIDDB');
+		}
+
+		JFile::delete($target);
+
 
 		// Check the size of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
 		if (strlen($uncompressed) < 1048576)
@@ -396,5 +395,103 @@ class AkeebaGeoipProvider
 				$db->updateObject('#__update_sites', $newSite, 'update_site_id', true);
 			}
 		}
+	}
+
+	private function downloadDatabase()
+	{
+		// Download the latest MaxMind GeoCountry Lite database
+		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
+
+		// I should have F0F installed, but let's double check in order to avoid errors
+		if(file_exists(JPATH_LIBRARIES.'/f0f/include.php'))
+		{
+			require_once JPATH_LIBRARIES.'/f0f/include.php';
+		}
+
+		// Do I have the latest version of F0F? If not I'll use Joomla library and hope for the best
+		// This check will be removed in the future
+		if(class_exists('F0FDownload'))
+		{
+			$http = new F0FDownload();
+
+			// If I am using curl, let's store and send cookies, it should be more fail-proof against CloudFlare security
+			if($http->getAdapterName() == 'curl')
+			{
+				$cookiefile = tempnam($this->getTempFolder(), 'geoip');
+				$cookiejar  = tempnam($this->getTempFolder(), 'geoip');
+
+				$http->setAdapterOptions(array(
+					CURLOPT_COOKIEFILE => $cookiefile,
+					CURLOPT_COOKIEJAR  => $cookiejar
+				));
+			}
+
+			$compressed = $http->getFromURL($url);
+
+			// Remove cookie files, we don't need them
+			if($http->getAdapterName() == 'curl')
+			{
+				unlink($cookiefile);
+				unlink($cookiejar);
+			}
+		}
+		else
+		{
+			$http = JHttpFactory::getHttp();
+
+			// Let's bubble up the exception, we will take care in the caller
+			$response   = $http->get($url);
+			$compressed = $response->body;
+
+			// Generic check on valid HTTP code
+			if($response->code > 299)
+			{
+				throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
+			}
+		}
+
+		// An empty file indicates a problem with MaxMind's servers
+		if (empty($compressed))
+		{
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD'));
+		}
+
+		// Sometimes you get a rate limit exceeded
+		if (stristr($compressed, 'Rate limited exceeded') !== false)
+		{
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT'));
+		}
+
+		return $compressed;
+	}
+
+	/**
+	 * Reads (and checks) the temp Joomla folder
+	 *
+	 * @return string
+	 */
+	private function getTempFolder()
+	{
+		$jreg = JFactory::getConfig();
+		$tmpdir = $jreg->get('tmp_path');
+
+		JLoader::import('joomla.filesystem.folder');
+
+		// Make sure the user doesn't use the system-wide tmp directory. You know, the one that's
+		// being erased periodically and will cause a real mess while installing extensions (Grrr!)
+		if(realpath($tmpdir) == '/tmp')
+		{
+			// Someone inform the user that what he's doing is insecure and stupid, please. In the
+			// meantime, I will fix what is broken.
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+		// Make sure that folder exists (users do stupid things too often; you'd be surprised)
+		elseif(!JFolder::exists($tmpdir))
+		{
+			// Darn it, user! WTF where you thinking? OK, let's use a directory I know it's there...
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+
+		return $tmpdir;
 	}
 }
