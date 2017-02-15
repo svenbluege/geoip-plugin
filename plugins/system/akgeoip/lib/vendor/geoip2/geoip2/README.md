@@ -1,59 +1,62 @@
 # GeoIP2 PHP API #
 
-## Beta Note ##
-
-This is a beta release. The API may change before the first production
-release, which will be numbered 2.0.0.
-
-You may find information on the GeoIP2 beta release process on [our
-website](http://www.maxmind.com/en/geoip2_beta).
-
 ## Description ##
 
-This distribution provides an API for the [GeoIP2 web services]
-(http://dev.maxmind.com/geoip/geoip2/web-services) and the [GeoLite2
-databases](http://dev.maxmind.com/geoip/geoip2/geolite2/). The commercial
-GeoIP2 databases have not yet been released as a downloadable product.
+This package provides an API for the GeoIP2
+[web services](http://dev.maxmind.com/geoip/geoip2/web-services) and
+[databases](http://dev.maxmind.com/geoip/geoip2/downloadable). The API also
+works with the free
+[GeoLite2 databases](http://dev.maxmind.com/geoip/geoip2/geolite2/).
 
-## Installation ##
-
-### Define Your Dependencies ###
+## Install via Composer ##
 
 We recommend installing this package with [Composer](http://getcomposer.org/).
-To do this, add `geoip2/geoip2` to your `composer.json` file.
 
-```json
-{
-    "require": {
-        "geoip2/geoip2": "0.5.*"
-    }
-}
+### Download Composer ###
+
+To download Composer, run in the root directory of your project:
+
+```bash
+curl -sS https://getcomposer.org/installer | php
 ```
 
-### Install Composer ###
-
-Run in your project root:
-
-```
-curl -s http://getcomposer.org/installer | php
-```
+You should now have the file `composer.phar` in your project directory.
 
 ### Install Dependencies ###
 
 Run in your project root:
 
 ```
-php composer.phar install
+php composer.phar require geoip2/geoip2:~2.0
 ```
+
+You should now have the files `composer.json` and `composer.lock` as well as
+the directory `vendor` in your project directory. If you use a version control
+system, `composer.json` should be added to it.
 
 ### Require Autoloader ###
 
-You can autoload all dependencies by adding this to your code:
-```
+After installing the dependencies, you need to require the Composer autoloader
+from your code:
+
+```php
 require 'vendor/autoload.php';
 ```
 
-### Optional C Extension ###
+## Install via Phar ##
+
+Although we strongly recommend using Composer, we also provide a
+[phar archive](http://php.net/manual/en/book.phar.php) containing all of the
+dependencies for GeoIP2. Our latest phar archive is available on
+[our releases page](https://github.com/maxmind/GeoIP2-php/releases).
+
+To use the archive, just require it from your script:
+
+```php
+require 'geoip2.phar';
+```
+
+## Optional C Extension ##
 
 The [MaxMind DB API](https://github.com/maxmind/MaxMind-DB-Reader-php)
 includes an optional C extension that you may install to dramatically increase
@@ -61,6 +64,12 @@ the performance of lookups in GeoIP2 or GeoLite2 databases. To install, please
 follow the instructions included with that API.
 
 The extension has no effect on web-service lookups.
+
+## IP Geolocation Usage ##
+
+IP geolocation is inherently imprecise. Locations are often near the center of
+the population. Any location provided by a GeoIP2 database or web service
+should not be used to identify a particular address or household.
 
 ## Database Reader ##
 
@@ -76,12 +85,12 @@ classes for the different parts of the data such as the city in which the
 IP address is located.
 
 If the record is not found, a `\GeoIp2\Exception\AddressNotFoundException`
-is returned. If the database is invalid or corrupt, a
+is thrown. If the database is invalid or corrupt, a
 `\MaxMind\Db\InvalidDatabaseException` will be thrown.
 
 See the API documentation for more details.
 
-### Example ###
+### City Example ###
 
 ```php
 <?php
@@ -109,6 +118,116 @@ print($record->postal->code . "\n"); // '55455'
 
 print($record->location->latitude . "\n"); // 44.9733
 print($record->location->longitude . "\n"); // -93.2323
+
+```
+
+### Anonymous IP Example ###
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+use GeoIp2\Database\Reader;
+
+// This creates the Reader object, which should be reused across
+// lookups.
+$reader = new Reader('/usr/local/share/GeoIP/GeoIP2-Anonymous-IP.mmdb');
+
+$record = $reader->anonymousIp('128.101.101.101');
+
+if ($record->isAnonymous) { print "anon\n"; }
+print($record->ipAddress . "\n"); // '128.101.101.101'
+
+```
+
+### Connection-Type Example ###
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+use GeoIp2\Database\Reader;
+
+// This creates the Reader object, which should be reused across
+// lookups.
+$reader = new Reader('/usr/local/share/GeoIP/GeoIP2-Connection-Type.mmdb');
+
+$record = $reader->connectionType('128.101.101.101');
+
+print($record->connectionType . "\n"); // 'Corporate'
+print($record->ipAddress . "\n"); // '128.101.101.101'
+
+```
+
+### Domain Example ###
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+use GeoIp2\Database\Reader;
+
+// This creates the Reader object, which should be reused across
+// lookups.
+$reader = new Reader('/usr/local/share/GeoIP/GeoIP2-Domain.mmdb');
+
+$record = $reader->domain('128.101.101.101');
+
+print($record->domain . "\n"); // 'umn.edu'
+print($record->ipAddress . "\n"); // '128.101.101.101'
+
+```
+
+### Enterprise Example ###
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+use GeoIp2\Database\Reader;
+
+// This creates the Reader object, which should be reused across
+// lookups.
+$reader = new Reader('/usr/local/share/GeoIP/GeoIP2-Enterprise.mmdb');
+
+// Use the ->enterprise method to do a lookup in the Enterprise database
+$record = $reader->enterprise('128.101.101.101');
+
+print($record->country->confidence . "\n"); // 99
+print($record->country->isoCode . "\n"); // 'US'
+print($record->country->name . "\n"); // 'United States'
+print($record->country->names['zh-CN'] . "\n"); // '美国'
+
+print($record->mostSpecificSubdivision->confidence . "\n"); // 77
+print($record->mostSpecificSubdivision->name . "\n"); // 'Minnesota'
+print($record->mostSpecificSubdivision->isoCode . "\n"); // 'MN'
+
+print($record->city->confidence . "\n"); // 60
+print($record->city->name . "\n"); // 'Minneapolis'
+
+print($record->postal->code . "\n"); // '55455'
+
+print($record->location->accuracy_radius . "\n"); // 50
+print($record->location->latitude . "\n"); // 44.9733
+print($record->location->longitude . "\n"); // -93.2323
+
+```
+
+### ISP Example ###
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+use GeoIp2\Database\Reader;
+
+// This creates the Reader object, which should be reused across
+// lookups.
+$reader = new Reader('/usr/local/share/GeoIP/GeoIP2-ISP.mmdb');
+
+$record = $reader->isp('128.101.101.101');
+
+print($record->autonomousSystemNumber . "\n"); // 217
+print($record->autonomousSystemOrganization . "\n"); // 'University of Minnesota'
+print($record->isp . "\n"); // 'University of Minnesota'
+print($record->organization . "\n"); // 'University of Minnesota'
+
+print($record->ipAddress . "\n"); // '128.101.101.101'
 
 ```
 
@@ -142,7 +261,7 @@ use GeoIp2\WebService\Client;
 $client = new Client(42, 'abcdef123456');
 
 // Replace "city" with the method corresponding to the web service that
-// you are using, e.g., "country", "cityIspOrg", "omni".
+// you are using, e.g., "country", "insights".
 $record = $client->city('128.101.101.101');
 
 print($record->country->isoCode . "\n"); // 'US'
@@ -161,6 +280,20 @@ print($record->location->longitude . "\n"); // -93.2323
 
 ```
 
+## Values to use for Database or Array Keys ##
+
+**We strongly discourage you from using a value from any `names` property as
+a key in a database or array.**
+
+These names may change between releases. Instead we recommend using one of the
+following:
+
+* `GeoIp2\Record\City` - `$city->geonameId`
+* `GeoIp2\Record\Continent` - `$continent->code` or `$continent->geonameId`
+* `GeoIp2\Record\Country` and `GeoIp2\Record\RepresentedCountry` -
+  `$country->isoCode` or `$country->geonameId`
+* `GeoIp2\Record\Subdivision` - `$subdivision->isoCode` or `$subdivision->geonameId`
+
 ### What data is returned? ###
 
 While many of the end points return the same basic records, the attributes
@@ -172,14 +305,11 @@ Because of these factors, it is possible for any end point to return a record
 where some or all of the attributes are unpopulated.
 
 See the
-[GeoIP2 web service docs](http://dev.maxmind.com/geoip/geoip2/web-services)
+[GeoIP2 Precision web service docs](http://dev.maxmind.com/geoip/geoip2/web-services)
 for details on what data each end point may return.
 
 The only piece of data which is always returned is the `ipAddress`
 attribute in the `GeoIp2\Record\Traits` record.
-
-Every record class attribute has a corresponding predicate method so you can
-check to see if the attribute is set.
 
 ## Integration with GeoNames ##
 
@@ -226,14 +356,20 @@ to the client API, please see
 ## Requirements  ##
 
 This code requires PHP 5.3 or greater. Older versions of PHP are not
-supported.
+supported. This library works and is tested with HHVM.
 
-This library also relies on the [Guzzle HTTP client](http://guzzlephp.org/).
+This library also relies on the [MaxMind DB Reader](https://github.com/maxmind/MaxMind-DB-Reader-php).
+
+If you are using PHP 5.3 with an autoloader besides Composer, you must load
+`JsonSerializable.php` in the `compat` directory.
 
 ## Contributing ##
 
-Patches and pull requests are encouraged. All code should follow the
-PSR-2 style guidelines. Please include unit tests whenever possible.
+Patches and pull requests are encouraged. All code should follow the PSR-2
+style guidelines. Please include unit tests whenever possible. You may obtain
+the test data for the maxmind-db folder by running `git submodule update
+--init --recursive` or adding `--recursive` to your initial clone, or from
+https://github.com/maxmind/MaxMind-DB
 
 ## Versioning ##
 
@@ -241,7 +377,7 @@ The GeoIP2 PHP API uses [Semantic Versioning](http://semver.org/).
 
 ## Copyright and License ##
 
-This software is Copyright (c) 2013 by MaxMind, Inc.
+This software is Copyright (c) 2013-2016 by MaxMind, Inc.
 
-This is free software, licensed under the GNU Lesser General Public License
-version 2.1 or later.
+This is free software, licensed under the Apache License, Version 2.0.
+

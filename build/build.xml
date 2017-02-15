@@ -13,36 +13,23 @@
 
         <exclude name="lib/composer.*" />
 
-        <exclude name="lib/vendor/geoip2/geoip2/bin/**" />
-		<exclude name="lib/vendor/geoip2/geoip2/tests/**" />
-		<exclude name="lib/vendor/geoip2/geoip2/tests/.gitignore" />
-		<exclude name="lib/vendor/geoip2/geoip2/tests/.gitmodules" />
-		<exclude name="lib/vendor/geoip2/geoip2/tests/.travis.yml" />
-		<exclude name="lib/vendor/geoip2/geoip2/tests/phpunit.xml.dist" />
+        <exclude name="lib/vendor/composer/ca-bundle/**" />
+        <exclude name="lib/vendor/composer/installed.json" />
 
-        <exclude name="lib/vendor/guzzle/guzzle/docs/**" />
-        <exclude name="lib/vendor/guzzle/guzzle/phing/**" />
-        <exclude name="lib/vendor/guzzle/guzzle/tests/**" />
-        <exclude name="lib/vendor/guzzle/guzzle/.gitignore" />
-        <exclude name="lib/vendor/guzzle/guzzle/.travis.yml" />
-        <exclude name="lib/vendor/guzzle/guzzle/build.xml" />
-        <exclude name="lib/vendor/guzzle/guzzle/phar-stub.php" />
-        <exclude name="lib/vendor/guzzle/guzzle/phpunit.xml.dist" />
+        <exclude name="lib/vendor/geoip2/geoip2/maxmind-db/**" />
 
+		<exclude name="lib/vendor/geoip2/geoip2/bin/**" />
+		<exclude name="lib/vendor/geoip2/geoip2/.gitmodules" />
+		<exclude name="lib/vendor/geoip2/geoip2/CHANGELOG.md" />
+		<exclude name="lib/vendor/geoip2/geoip2/composer.json" />
 
-        <exclude name="lib/vendor/maxmind-db/reader/examples/**" />
+		<exclude name="lib/vendor/maxmind/web-service-common/CHANGELOG.md" />
+		<exclude name="lib/vendor/maxmind/web-service-common/composer.json" />
+
         <exclude name="lib/vendor/maxmind-db/reader/ext/**" />
         <exclude name="lib/vendor/maxmind-db/reader/tests/**" />
-        <exclude name="lib/vendor/maxmind-db/reader/tests/.coveralls*" />
-        <exclude name="lib/vendor/maxmind-db/reader/tests/.gitignore" />
-        <exclude name="lib/vendor/maxmind-db/reader/tests/.gitmodules" />
-        <exclude name="lib/vendor/maxmind-db/reader/tests/.travis.yml" />
-        <exclude name="lib/vendor/maxmind-db/reader/tests/phpunit.xml.dist" />
-
-        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Debug/**" />
-        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/Tests/**" />
-        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/.gitignore" />
-        <exclude name="lib/vendor/symfony/event-dispatcher/Symfony/Component/EventDispatcher/phpunit.xml.dist" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/CHANGELOG.md" />
+        <exclude name="lib/vendor/maxmind-db/reader/tests/composer.json" />
 	</fileset>
 	
 	<!--
@@ -58,6 +45,10 @@
 	<target name="git" description="Makes only packages"
 		depends="new-release,setup-properties,plugin-package">
 	</target>
+
+	<target name="documentation" description="We don't have any">
+	</target>
+
 
 	<!--
 	====================================================================================================
