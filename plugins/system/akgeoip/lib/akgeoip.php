@@ -93,6 +93,11 @@ class AkeebaGeoipProvider
 	 */
 	public function getCountryRecord($ip)
 	{
+		if ($this->hasCity)
+		{
+			return $this->getCityRecord($ip);
+		}
+
 		if (!array_key_exists($ip, $this->lookups))
 		{
 			try
@@ -291,7 +296,7 @@ class AkeebaGeoipProvider
 			return false;
 		}
 
-		return $record->name;
+		return $record->city->name;
 	}
 
 
