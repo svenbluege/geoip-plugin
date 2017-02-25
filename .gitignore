@@ -7,6 +7,7 @@
 
 /plugins/system/akgeoip/akgeoip.xml
 /plugins/system/akgeoip/db/GeoLite2-Country.mmdb
+/plugins/system/akgeoip/db/GeoLite2-*.mmdb
 
 /release
 
