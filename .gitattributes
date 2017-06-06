@@ -39,3 +39,4 @@ RELEASENOTES text eol=lf
 *.exe binary
 *.jar binary
 *.phar binary
+*.mmdb binary
