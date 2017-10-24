@@ -23,8 +23,10 @@ the following tools:
 
 You will also need the following path structure on your system
 
-- maxmindprovider	This repository, a.k.a. MAIN directory
-- buildfiles		Akeeba Build Tools (https://github.com/akeeba/buildfiles)
+- **maxmindprovider**	This repository, a.k.a. MAIN directory
+- **buildfiles**		[Akeeba Build Tools](https://github.com/akeeba/buildfiles)
+- **translations**      [Akeeba Translations](https://github.com/akeeba/translations)
+
 
 You will need to use the exact folder names specified here.
 
