@@ -1,3 +1,7 @@
+Akeeba GeoIP Provider Plugin 2.1.0
+================================================================================
+~ PHP 7.4 support
+
 Akeeba GeoIP Provider Plugin 2.0.0
 ================================================================================
 ~ Using the new MaxMind GeoIP2 version 2.0 library
