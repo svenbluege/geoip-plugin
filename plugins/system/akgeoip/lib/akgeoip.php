@@ -1,8 +1,8 @@
 <?php
 /**
- * @package		akgeoip
- * @copyright   Copyright (c)2013-2019 Nicholas K. Dionysopoulos / Akeeba Ltd
- * @license		GNU General Public License version 3, or later
+ * @package   akgeoip
+ * @copyright Copyright (c)2013-2019 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @license   GNU GPL version 3 or later
  */
 
 defined('_JEXEC') or die();
