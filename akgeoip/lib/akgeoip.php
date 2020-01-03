@@ -308,7 +308,11 @@ class AkeebaGeoipProvider
 	 */
 	public function updateDatabase($forceCity = false)
 	{
-		$outputFile = JPATH_PLUGINS . '/system/akgeoip/db/GeoLite2-Country.mmdb';
+        $plugin = JPluginHelper::getPlugin('system','akgeoip');
+        $params = new JRegistry($plugin->params);
+        $licenseKey = $params->get('licenseKey','');
+
+        $outputFile = JPATH_PLUGINS . '/system/akgeoip/db/GeoLite2-Country.mmdb';
 		$deleteFile = JPATH_PLUGINS . '/system/akgeoip/db/GeoLite2-City.mmdb';
 
 		if ($this->hasCity || $forceCity)
@@ -328,7 +332,7 @@ class AkeebaGeoipProvider
 		// Try to download the package, if I get any exception I'll simply stop here and display the error
 		try
 		{
-			$compressed = $this->downloadDatabase($forceCity);
+			$compressed = $this->downloadDatabase($forceCity, $licenseKey);
 		}
 		catch (\Exception $e)
 		{
@@ -427,93 +431,10 @@ class AkeebaGeoipProvider
 			}
 		}
 
-		// Piggyback on this method to also refresh the update site to this plugin
-		$this->refreshUpdateSite();
 
 		return true;
 	}
 
-	/**
-	 * Refreshes the Joomla! update sites for this extension as needed
-	 *
-	 * @return  void
-	 */
-	public function refreshUpdateSite()
-	{
-		JLoader::import('joomla.application.plugin.helper');
-
-		// Create the update site definition we want to store to the database
-		$update_site = array(
-			'name'		=> 'Akeeba GeoIP Provider Plugin',
-			'type'		=> 'extension',
-			'location'	=> 'http://cdn.akeebabackup.com/updates/akgeoip.xml',
-			'enabled'	=> 1,
-			'last_check_timestamp'	=> 0,
-		);
-
-		$db = JFactory::getDbo();
-
-		// Get the extension ID to ourselves
-		$query = $db->getQuery(true)
-			->select($db->qn('extension_id'))
-			->from($db->qn('#__extensions'))
-			->where($db->qn('type') . ' = ' . $db->q('plugin'))
-			->where($db->qn('element') . ' = ' . $db->q('akgeoip'))
-			->where($db->qn('folder') . ' = ' . $db->q('system'));
-		$db->setQuery($query);
-
-		$extension_id = $db->loadResult();
-
-		if (empty($extension_id))
-		{
-			return;
-		}
-
-		// Get the update sites for our extension
-		$query = $db->getQuery(true)
-			->select($db->qn('update_site_id'))
-			->from($db->qn('#__update_sites_extensions'))
-			->where($db->qn('extension_id') . ' = ' . $db->q($extension_id));
-		$db->setQuery($query);
-
-		$updateSiteIDs = $db->loadColumn(0);
-
-		if (!count($updateSiteIDs))
-		{
-			// No update sites defined. Create a new one.
-			$newSite = (object)$update_site;
-			$db->insertObject('#__update_sites', $newSite);
-
-			$id = $db->insertid();
-
-			$updateSiteExtension = (object)array(
-				'update_site_id'	=> $id,
-				'extension_id'		=> $extension_id,
-			);
-			$db->insertObject('#__update_sites_extensions', $updateSiteExtension);
-		}
-
-		// Loop through all update sites
-		foreach ($updateSiteIDs as $id)
-		{
-			$query = $db->getQuery(true)
-			            ->select('*')
-			            ->from($db->qn('#__update_sites'))
-			            ->where($db->qn('update_site_id') . ' = ' . $db->q($id));
-			$db->setQuery($query);
-			$aSite = $db->loadObject();
-
-			// Does the name and location match?
-			if (($aSite->name == $update_site['name']) && ($aSite->location == $update_site['location']))
-			{
-				continue;
-			}
-
-			$update_site['update_site_id'] = $id;
-			$newSite = (object)$update_site;
-			$db->updateObject('#__update_sites', $newSite, 'update_site_id', true);
-		}
-	}
 
 	/**
 	 * Download the compressed database for the provider
@@ -526,14 +447,14 @@ class AkeebaGeoipProvider
 	 *
 	 * @throws  Exception
 	 */
-	private function downloadDatabase($forceCity = false)
+	private function downloadDatabase($forceCity = false, $license_key)
 	{
 		// Download the latest MaxMind GeoCountry Lite database
-		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
+        $url = 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&suffix=tar.gz&license_key=' . $license_key;
 
 		if ($this->hasCity || $forceCity)
 		{
-			$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz';
+            $url = 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&suffix=tar.gz&license_key=' . $license_key;
 		}
 
 		// I should have F0F installed, but let's double check in order to avoid errors

@@ -5,8 +5,11 @@ This plugin used to provide country-level geographic IP services using MaxMind's
 > This product includes GeoLite2 data created by MaxMind, available from
 [http://www.maxmind.com](http://www.maxmind.com).
 
-# OBSOLETE - NO LONGER MAINTAINED
+# Modifications
 
-On December 18th, 2019, MaxMind [announced signifficant changes in the licensing and distribution](https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-geolite2-databases/) of their GeoLite2 data. As a result we had to discontinue this plugin. For the reasoning please [refer to our December 30th, 2019 announcement](https://www.akeebabackup.com/news/1727-removal-of-geographic-ip-features-from-akeeba-software.html).
+Supports adding a license key for updating the geoip information.
 
-This repository will remain archived.
+# Build
+
+Run build.sh in the `/build` folder to generate an installable zip file.
+
