@@ -1,6 +1,5 @@
-Akeeba GeoIP Provider Plugin 3.0.0
+Akeeba GeoIP Provider Plugin 2.1.0
 ================================================================================
-- Removed option to automatically update the database following MaxMind's announcement, see https://www.akeebabackup.com/documentation/admin-tools/using-the-component.html#control-panel
 ~ PHP 7.4 support
 
 Akeeba GeoIP Provider Plugin 2.0.0

@@ -300,6 +300,140 @@ class AkeebaGeoipProvider
 
 
 	/**
+	 * Downloads and installs a fresh copy of the GeoLite2 Country database
+	 *
+	 * @param   bool  $forceCity  Should I force the download of the city-level library?
+	 *
+	 * @return  mixed  True on success, error string on failure
+	 */
+	public function updateDatabase($forceCity = false)
+	{
+		$outputFile = JPATH_PLUGINS . '/system/akgeoip/db/GeoLite2-Country.mmdb';
+		$deleteFile = JPATH_PLUGINS . '/system/akgeoip/db/GeoLite2-City.mmdb';
+
+		if ($this->hasCity || $forceCity)
+		{
+			$temp = $outputFile;
+			$outputFile = $deleteFile;
+			$outputFile = $temp;
+			unset($temp);
+		}
+
+		// Sanity check
+		if (!function_exists('gzinflate'))
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_NOGZSUPPORT');
+		}
+
+		// Try to download the package, if I get any exception I'll simply stop here and display the error
+		try
+		{
+			$compressed = $this->downloadDatabase($forceCity);
+		}
+		catch (\Exception $e)
+		{
+			return $e->getMessage();
+		}
+
+		// Write the downloaded file to a temporary location
+		$tmpdir = $this->getTempFolder();
+		$target = $tmpdir . '/GeoLite2-Country.mmdb.gz';
+		$ret = JFile::write($target, $compressed);
+
+		if ($ret === false)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_WRITEFAILED');
+		}
+
+		unset($compressed);
+
+		// Decompress the file
+		$uncompressed = '';
+
+		$zp = @gzopen($target, 'rb');
+
+		if ($zp === false)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTUNCOMPRESS');
+		}
+
+		if ($zp !== false)
+		{
+			while (!gzeof($zp))
+			{
+				$uncompressed .= @gzread($zp, 102400);
+			}
+
+			@gzclose($zp);
+
+			if (!@unlink($target))
+			{
+				JFile::delete($target);
+			}
+		}
+
+		// Double check if MaxMind can actually read and validate the downloaded database
+		try
+		{
+			// The Reader want a file, so let me write again the file in the temp directory
+			JFile::write($target, $uncompressed);
+			$reader = new Reader($target);
+		}
+		catch (\Exception $e)
+		{
+			JFile::delete($target);
+
+			// MaxMind could not validate the database, let's inform the user
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_INVALIDDB');
+		}
+
+		JFile::delete($target);
+
+		// Check the size of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
+		if (strlen($uncompressed) < 1048576)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
+		}
+
+		// Check the contents of the uncompressed data. When MaxMind goes into overload, we get crap data in return.
+		if (stristr($uncompressed, 'Rate limited exceeded') !== false)
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT');
+		}
+
+		// Remove old file
+		JLoader::import('joomla.filesystem.file');
+
+		if (JFile::exists($outputFile))
+		{
+			if (!JFile::delete($outputFile))
+			{
+				return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTDELETEOLD');
+			}
+		}
+
+		// Write the update file
+		if (!JFile::write($outputFile, $uncompressed))
+		{
+			return JText::_('PLG_SYSTEM_AKGEOIP_ERR_CANTWRITE');
+		}
+
+		// Finally, delete the other database file, if present
+		if (JFile::exists($deleteFile))
+		{
+			if (!JFile::delete($deleteFile))
+			{
+				@unlink($deleteFile);
+			}
+		}
+
+		// Piggyback on this method to also refresh the update site to this plugin
+		$this->refreshUpdateSite();
+
+		return true;
+	}
+
+	/**
 	 * Refreshes the Joomla! update sites for this extension as needed
 	 *
 	 * @return  void
@@ -379,5 +513,89 @@ class AkeebaGeoipProvider
 			$newSite = (object)$update_site;
 			$db->updateObject('#__update_sites', $newSite, 'update_site_id', true);
 		}
+	}
+
+	/**
+	 * Download the compressed database for the provider
+	 *
+	 * @param   bool  $forceCity  Should I force the download of the city-level database
+	 *
+	 * @return  string  The compressed data
+	 *
+	 * @since   1.0.1
+	 *
+	 * @throws  Exception
+	 */
+	private function downloadDatabase($forceCity = false)
+	{
+		// Download the latest MaxMind GeoCountry Lite database
+		$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz';
+
+		if ($this->hasCity || $forceCity)
+		{
+			$url = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz';
+		}
+
+		// I should have F0F installed, but let's double check in order to avoid errors
+		if (file_exists(JPATH_LIBRARIES . '/f0f/include.php'))
+		{
+			require_once JPATH_LIBRARIES . '/f0f/include.php';
+		}
+
+		$http = JHttpFactory::getHttp();
+
+		// Let's bubble up the exception, we will take care in the caller
+		$response   = $http->get($url);
+		$compressed = $response->body;
+
+		// Generic check on valid HTTP code
+		if ($response->code > 299)
+		{
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMIND_GENERIC'));
+		}
+
+		// An empty file indicates a problem with MaxMind's servers
+		if (empty($compressed))
+		{
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_EMPTYDOWNLOAD'));
+		}
+
+		// Sometimes you get a rate limit exceeded
+		if (stristr($compressed, 'Rate limited exceeded') !== false)
+		{
+			throw new \Exception(JText::_('PLG_SYSTEM_AKGEOIP_ERR_MAXMINDRATELIMIT'));
+		}
+
+		return $compressed;
+	}
+
+	/**
+	 * Reads (and checks) the temp Joomla folder
+	 *
+	 * @return string
+	 */
+	private function getTempFolder()
+	{
+		$jRegistry = JFactory::getConfig();
+		$tmpdir    = $jRegistry->get('tmp_path');
+
+		JLoader::import('joomla.filesystem.folder');
+
+		// Make sure the user doesn't use the system-wide tmp directory. You know, the one that's
+		// being erased periodically and will cause a real mess while installing extensions (Grrr!)
+		if (realpath($tmpdir) == '/tmp')
+		{
+			// Someone inform the user that what he's doing is insecure and stupid, please. In the
+			// meantime, I will fix what is broken.
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+		// Make sure that folder exists (users do stupid things too often; you'd be surprised)
+		elseif (!JFolder::exists($tmpdir))
+		{
+			// Darn it, user! WTF where you thinking? OK, let's use a directory I know it's there...
+			$tmpdir = JPATH_SITE . '/tmp';
+		}
+
+		return $tmpdir;
 	}
 }
