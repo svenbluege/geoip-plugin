@@ -48,7 +48,7 @@ if (!function_exists('bcadd'))
 		// process each digit, keep the ones, carry the tens (remainders)
 		for ($i = 0; $i < $MLen; $i++)
 		{
-			$Sum = ((int) $Num1{$i} + (int) $Num2{$i});
+			$Sum = ((int) $Num1[$i] + (int) $Num2[$i]);
 			if (isset($Output[$i]))
 			{
 				$Sum += $Output[$i];
@@ -87,7 +87,7 @@ if (!function_exists('bcmul'))
 		// remove zeroes from beginning of numbers
 		for ($i = 0; $i < strlen($Num1); $i++)
 		{
-			if (@$Num1{$i} != '0')
+			if (@$Num1[$i] != '0')
 			{
 				$Num1 = substr($Num1, $i);
 				break;
@@ -95,7 +95,7 @@ if (!function_exists('bcmul'))
 		}
 		for ($i = 0; $i < strlen($Num2); $i++)
 		{
-			if (@$Num2{$i} != '0')
+			if (@$Num2[$i] != '0')
 			{
 				$Num2 = substr($Num2, $i);
 				break;
@@ -116,7 +116,7 @@ if (!function_exists('bcmul'))
 				// we use the classic lattice method for calculating the multiplication..
 				// this will multiply each number in $Num1 with each number in $Num2 and store it accordingly
 			{
-				@$Rema[$i++ % $Len2] .= sprintf('%02d', (int) $Num1{$y} * (int) $Num2{$x});
+				@$Rema[$i++ % $Len2] .= sprintf('%02d', (int) $Num1[$y] * (int) $Num2[$x]);
 			}
 		}
 
@@ -126,7 +126,7 @@ if (!function_exists('bcmul'))
 			for ($x = 0; $x < $Len1 * 2; $x++)
 				// add up the numbers in the diagonal fashion the lattice method uses
 			{
-				@$Rema2[Floor(($x - 1) / 2) + 1 + $y] += (int) $Rema[$y]{$x};
+				@$Rema2[Floor(($x - 1) / 2) + 1 + $y] += (int) $Rema[$y][$x];
 			}
 		}
 
