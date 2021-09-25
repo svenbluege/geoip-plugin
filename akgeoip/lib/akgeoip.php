@@ -447,7 +447,7 @@ class AkeebaGeoipProvider
 	 *
 	 * @throws  Exception
 	 */
-	private function downloadDatabase($forceCity = false, $license_key)
+	private function downloadDatabase($forceCity = false, $license_key ="")
 	{
 		// Download the latest MaxMind GeoCountry Lite database
         $url = 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&suffix=tar.gz&license_key=' . $license_key;
